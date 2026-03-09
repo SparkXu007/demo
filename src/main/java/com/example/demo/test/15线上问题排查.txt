@@ -1,0 +1,13 @@
+
+1.死锁问题排查
+    代码死锁：
+        1.通过jps获取进程ID
+        2.通过jstack 线程ID获取死锁信息
+    数据库死锁：
+        1.使用SHOW ENGINE INNODB STATUS命令，查看最近一次死锁的详细信息
+        2.查看LATEST DETECTED DEADLOCK部分，分析死锁信息
+2.CPU飙高排查
+    1.使用top 命令，获取CPU占用高的进程ID
+    2.使用top -H -p 进程ID 找到CPU占用高的线程ID
+    3.使用printf '0x%x\n' 线程ID 将线程ID转换为16进制
+    4.使用jstack 进程ID | grep 16进制线程ID -A 20

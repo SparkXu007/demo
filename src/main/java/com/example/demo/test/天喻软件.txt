@@ -1,0 +1,1007 @@
+一、Java基础核心真题
+1. 请解释 public static void main(String args[]) 中每个关键字的作用？
+答：
+- public：公共修饰符，表示该方法可以被任何类访问。因为 JVM 需要调用 main 方法，所以必须是 public 的。
+- static：静态修饰符，表示该方法属于类而非实例。这样 JVM 可以直接通过类名调用 main 方法，无需创建对象。
+- void：返回类型，表示 main 方法不返回任何值。程序执行结束后，JVM 不期望从 main 方法获取返回值。
+- main：方法名，是 Java 程序的入口点，JVM 会查找并执行这个方法。
+- String args[]：字符串数组参数，用于接收命令行传入的参数。args 是 parameter name，可以改为其他名称。
+
+2. 抽象类和接口的区别是什么？Java 8 之后接口有哪些新特性？
+答：
+区别：
+- 设计目的：抽象类是对类的抽象，表示"is-a"关系；接口是对行为的抽象，表示"can-do"关系。
+- 继承限制：一个类只能继承一个抽象类（单继承），但可以实现多个接口（多实现）。
+- 成员变量：抽象类可以有各种类型的成员变量；接口只能有 public static final 常量。
+- 构造方法：抽象类可以有构造方法供子类调用；接口不能有构造方法。
+- 方法实现：抽象类可以有普通方法和抽象方法；Java 8 之前接口只能有抽象方法。
+
+Java 8 后接口新特性：
+- 默认方法（default method）：使用 default 关键字定义，提供默认实现，允许在不破坏现有实现类的情况下扩展接口。
+- 静态方法（static method）：接口中可以定义静态方法，通过接口名直接调用。
+- 私有方法（Java 9）：Java 9 开始支持私有方法，用于代码复用。
+
+3. 能否在接口中定义静态方法和默认方法？它们的使用场景分别是什么？
+答：可以。
+
+静态方法使用场景：
+- 工具方法：与具体实现无关的通用方法，如 Collections.sort()。
+- 工厂方法：创建接口实例的方法，如 Optional.of()。
+- 辅助方法：独立于实现类的功能。
+
+默认方法使用场景：
+- 向后兼容：在已发布的接口中添加新方法时，避免破坏现有实现类。
+- 通用行为：为所有实现类提供通用的默认行为，实现类可选择性重写。
+- 函数式接口扩展：如 Stream API 中的很多默认方法。
+
+4. ==和 equals() 的区别是什么？重写 equals() 时为什么必须重写 hashCode()？
+答：
+区别：
+- ==：对于基本类型比较值是否相等；对于引用类型比较的是内存地址是否相同（是否同一个对象）。
+- equals()：默认实现与==相同，但通常会被重写用于比较对象的内容是否相等。
+
+为什么要重写 hashCode()：
+- 契约规定：如果两个对象 equals() 返回 true，它们的 hashCode() 必须相同。
+- 哈希集合需求：HashMap、HashSet 等基于哈希的集合先通过 hashCode() 定位桶位置，再用 equals() 比较。如果只重写 equals() 不重写 hashCode()，会导致相等的对象可能被分配到不同桶，造成查找失败或重复存储。
+- 性能考虑：一致的 hashCode() 能确保哈希集合的高效性。
+
+5. final、finally、finalize 的区别是什么？final 关键字有哪些用法？
+答：
+区别：
+- final：关键字，用于修饰类（不可继承）、方法（不可重写）、变量（不可重新赋值）。
+- finally：异常处理的一部分，try-catch-finally 结构中无论是否发生异常都会执行的代码块。
+- finalize：Object 类的方法，垃圾回收器回收对象前会调用此方法，用于资源清理（Java 9 已废弃）。
+
+final 的用法：
+- final 类：不能被继承，如 String、Integer。
+- final 方法：不能被子类重写，但可以重载。
+- final 变量：
+  * 成员变量：必须在声明时、构造方法或初始化块中赋值，之后不可改变。
+  * 局部变量：赋值后不可改变。
+  * 参数：方法内部不能修改参数值。
+- final 引用：引用地址不可变，但指向的对象内容可变。
+
+6. 什么是多态？Java 中如何实现运行时多态？能否通过数据成员实现运行时多态？
+答：
+多态：指同一操作作用于不同的对象，可以有不同的解释和执行结果。简单说就是"一个接口，多种形态"。
+
+运行时多态实现条件：
+- 继承关系：存在父类和子类。
+- 方法重写：子类重写父类的方法。
+- 父类引用指向子类对象：如 Parent p = new Child();
+
+示例：
+```java
+class Animal { void sound() { System.out.println("动物叫"); } }
+class Dog extends Animal { @Override void sound() { System.out.println("汪汪"); } }
+Animal a = new Dog(); // 运行时多态
+a.sound(); // 输出"汪汪"
+```
+
+数据成员不能实现运行时多态：
+- 字段没有动态绑定机制，访问哪个字段在编译时就确定了。
+- 示例：Parent p = new Child(); 访问 p.field 得到的是父类的 field，不是子类的。
+
+7. 重载和重写的区别是什么？构造方法可以被重载或重写吗？
+答：
+区别：
+- 重载（Overload）：同一类中方法名相同但参数列表不同（类型、个数、顺序），与返回类型无关。发生在编译时。
+- 重写（Override）：子类重新定义父类已有的方法，方法签名必须相同。发生在运行时，需要继承关系。
+
+构造方法：
+- 可以重载：一个类可以有多个参数列表不同的构造方法。
+- 不能重写：构造方法不是继承来的，子类不能重写父类构造方法。但子类构造方法可以通过 super() 调用父类构造方法。
+
+8. Java 中的基本数据类型有哪些？short s1 = 1; s1 = s1 + 1;和 short s1 = 1; s1 += 1;有什么区别？
+答：
+8 种基本数据类型：
+- 整数型：byte(1 字节)、short(2 字节)、int(4 字节)、long(8 字节)
+- 浮点型：float(4 字节)、double(8 字节)
+- 字符型：char(2 字节)
+- 布尔型：boolean(JVM 规范未明确大小)
+
+区别：
+- s1 = s1 + 1：错误！s1 + 1 运算时会发生自动类型提升，结果是 int 类型，不能直接赋值给 short，需要强制转换：s1 = (short)(s1 + 1);
+- s1 += 1：正确！复合赋值运算符会自动进行隐式类型转换，等价于 s1 = (short)(s1 + 1);
+
+9. 数组和 ArrayList 的区别是什么？数组的下标从几开始？
+答：
+区别：
+- 类型支持：数组可存储基本类型和对象；ArrayList 只能存储对象（泛型不支持基本类型）。
+- 大小固定性：数组长度固定，创建后不可变；ArrayList 动态扩容。
+- 功能丰富性：ArrayList 提供更多方法（add、remove、contains 等）；数组功能较简单。
+- 性能：数组访问速度略快；ArrayList 因封装有轻微开销。
+- 多维支持：数组支持多维；ArrayList 需嵌套实现。
+
+数组下标：从 0 开始，有效范围是 0 到 length-1。
+
+10. 如何跳出 Java 中的多层嵌套循环？
+答：
+方法一：带标签的 break（推荐）
+```java
+outer: for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 10; j++) {
+        if (condition) {
+            break outer; // 直接跳出外层循环
+        }
+    }
+}
+```
+
+方法二：使用标志变量
+```java
+boolean flag = false;
+for (int i = 0; i < 10 && !flag; i++) {
+    for (int j = 0; j < 10; j++) {
+        if (condition) {
+            flag = true;
+            break;
+        }
+    }
+}
+```
+
+方法三：将循环封装成方法，用 return 返回
+
+二、JVM 与性能调优真题
+1. 请描述 JVM 的内存模型，堆内存中新生代和老年代的划分及作用是什么？
+答：
+JVM 内存模型（运行时数据区）：
+- 程序计数器（Program Counter Register）：线程私有，记录当前执行的字节码指令地址。
+- 虚拟机栈（VM Stack）：线程私有，存储栈帧（局部变量表、操作数栈、动态链接、方法出口）。
+- 本地方法栈（Native Method Stack）：线程私有，为 Native 方法服务。
+- 堆（Heap）：线程共享，存储对象实例，是 GC 管理的主要区域。
+- 方法区（Method Area）：线程共享，存储类信息、常量、静态变量等（Java 8 后为元空间 Metaspace）。
+
+堆内存划分：
+- 新生代（Young Generation）：存放新创建的对象，分为 Eden 区和两个 Survivor 区（From/To）。
+  * Eden：大多数对象在此分配。
+  * Survivor：存活下来的对象会移到这里。
+- 老年代（Old Generation）：存放长期存活的对象，大对象也可能直接进入老年代。
+- 永久代/元空间（Permanent Generation/Metaspace）：存储类的元数据（Java 8 后用元空间替代永久代）。
+
+2. Minor GC 和 Full GC 的触发条件分别是什么？CMS 和 G1 垃圾收集器的优缺点有哪些？
+答：
+Minor GC 触发条件：Eden 区空间不足时触发，只回收新生代。
+
+Full GC 触发条件：
+- 老年代空间不足
+- 元空间/永久代不足
+- System.gc() 显式调用（不推荐）
+- Minor GC 后存活对象太多，无法放入 Survivor 区
+
+CMS（Concurrent Mark Sweep）：
+优点：低停顿时间，适合对响应速度要求高的场景
+缺点：会产生内存碎片；对 CPU 资源敏感；浮动垃圾问题
+
+G1（Garbage First）：
+优点：可预测的停顿时间；不会产生内存碎片；适合大堆内存
+缺点：实现复杂；年轻代和老年代同时回收时可能停顿时间较长
+
+3. 什么是双亲委派模型？如何打破双亲委派模型？请举例说明应用场景。
+答：
+双亲委派模型：ClassLoader 收到类加载请求时，先委托给父类加载器，只有当父类无法加载时才自己尝试加载。层次结构：Bootstrap > Extension > Application。
+
+好处：保证 Java 核心 API 的安全性和一致性，防止核心类被篡改。
+
+打破方式：自定义 ClassLoader，重写 loadClass() 方法（不推荐）或 findClass() 方法（推荐）。
+
+应用场景：
+- JDBC SPI：Thread.currentThread().setContextClassLoader() 使用线程上下文类加载器
+- Tomcat：每个 Web 应用有独立的 ClassLoader，可实现应用隔离和热部署
+- OSGi：模块化热插拔，每个 Bundle 有自己的 ClassLoader
+
+4. 如何排查 Java 程序的内存泄漏问题？常用的工具有哪些？
+答：
+排查步骤：
+1. 监控：使用 jstat、VisualVM 监控堆内存使用情况
+2. 导出堆转储：jmap -dump:format=b,file=heap.hprof pid
+3. 分析：使用 MAT（Memory Analyzer Tool）、JProfiler 分析堆转储文件
+4. 定位：查找占用内存最大的对象和引用链
+5. 修复：释放不必要的引用，使用弱引用等
+
+常用工具：
+- JDK 自带：jmap、jstat、jhat、VisualVM
+- 第三方：MAT、JProfiler、YourKit、GCEasy
+- 在线：GCEasy.io
+
+5. 启动 Java 程序时，-Xms、-Xmx、-Xmn 参数分别有什么作用？如何设置年轻代堆大小为 50M？
+答：
+-Xms：初始堆大小（Initial heap size）
+-Xmx：最大堆大小（Maximum heap size），建议与-Xms 设成一样，避免动态扩容
+-Xmn：年轻代大小（Young generation size）
+
+设置年轻代为 50M：
+java -Xms512m -Xmx512m -Xmn50m YourApp
+
+注意：一般建议年轻代占整个堆的 1/3 到 1/4
+
+三、多线程与并发编程真题
+1. synchronized 和 ReentrantLock 的区别是什么？ReentrantReadWriteLock 适合什么场景？
+答：
+synchronized vs ReentrantLock：
+- 实现层面：synchronized 是 JVM 层面的关键字；ReentrantLock 是 API 层面的类。
+- 锁释放：synchronized 自动释放；ReentrantLock 必须手动 unlock()（通常在 finally 中）。
+- 灵活性：ReentrantLock 更灵活，支持可中断、超时、公平锁、多条件变量；synchronized 功能较基础。
+- 性能：Java 6 之后两者性能接近，synchronized 做了大量优化（偏向锁、轻量级锁等）。
+- 调试：ReentrantLock 更容易排查问题，可以知道是否获得锁、等待时间等。
+
+ReentrantReadWriteLock 适用场景：
+- 读多写少：如缓存系统，大部分线程只读数据，少数线程修改数据。
+- 读写分离：读操作不互斥，写操作独占，提高并发性能。
+- 注意：不支持升级（从读锁升级到写锁会死锁）
+
+2. volatile 关键字的作用是什么？它能保证原子性吗？请举例说明其使用场景。
+答：
+volatile 作用：
+- 可见性：一个线程修改 volatile 变量后，新值立即对其他线程可见。
+- 有序性：禁止指令重排序优化（通过内存屏障实现）。
+- 不保证原子性：volatile 不能保证复合操作的原子性。
+
+不能保证原子性的例子：
+```java
+volatile int count = 0;
+count++; // 实际包含三步：读取、修改、写入，不是原子操作
+```
+
+使用场景：
+- 状态标志：volatile boolean flag; 用于线程间通信
+- 单例模式双重检查锁定（DCL）：volatile Singleton instance;
+- 独立观察值：如配置信息、运行状态等
+
+3. 线程池的核心参数有哪些？为什么不建议使用 Executors 创建线程池？
+答：
+ThreadPoolExecutor 核心参数（7 个）：
+1. corePoolSize：核心线程数，即使空闲也不会被回收
+2. maximumPoolSize：最大线程数
+3. keepAliveTime：非核心线程空闲存活时间
+4. unit：keepAliveTime 的时间单位
+5. workQueue：任务队列（如 LinkedBlockingQueue、ArrayBlockingQueue）
+6. threadFactory：线程工厂，用于创建线程
+7. handler：拒绝策略（AbortPolicy、CallerRunsPolicy、DiscardPolicy、DiscardOldestPolicy）
+
+不建议使用 Executors 的原因：
+- FixedThreadPool/SingleThreadPool：使用无界队列 LinkedBlockingQueue，可能导致 OOM
+- CachedThreadPool：允许创建的最大线程数为 Integer.MAX_VALUE，可能耗尽资源
+- ScheduledThreadPool：同样存在无界队列问题
+
+推荐做法：直接使用 ThreadPoolExecutor 构造函数，明确指定参数。
+
+4. CountDownLatch、CyclicBarrier、Semaphore 的区别是什么？请结合实际业务场景举例说明。
+答：
+CountDownLatch（倒计数器）：
+- 作用：一个或多个线程等待其他 N 个线程完成操作
+- 特点：一次性使用，计数归零后不可重用
+- 场景：启动游戏时等待所有玩家准备就绪
+
+```java
+CountDownLatch latch = new CountDownLatch(3);
+// 三个子线程执行任务
+latch.countDown();
+// 主线程等待
+latch.await();
+```
+
+CyclicBarrier（循环栅栏）：
+- 作用：N 个线程互相等待，到达栅栏点后同时继续执行
+- 特点：可重复使用，支持 reset()
+- 场景：多线程计算数据，每轮计算后汇总结果
+
+```java
+CyclicBarrier barrier = new CyclicBarrier(5, () -> {
+    System.out.println("所有人到达，开始汇总");
+});
+barrier.await();
+```
+
+Semaphore（信号量）：
+- 作用：控制同时访问特定资源的线程数量
+- 特点：限流器，permit 数量固定
+- 场景：数据库连接池、停车场车位管理
+
+```java
+Semaphore semaphore = new Semaphore(10); // 最多 10 个并发
+semaphore.acquire();
+try { /* 访问资源 */ } 
+finally { semaphore.release(); }
+```
+
+5. 什么是线程安全？Java 中有哪些线程安全的集合类？ArrayList 和 Vector 的区别是什么？
+答：
+线程安全：多个线程访问同一个对象时，不需要额外的同步措施，程序仍能正确执行。
+
+线程安全的集合类：
+- 同步容器：Vector、Hashtable、Collections.synchronizedXXX()
+- 并发容器（java.util.concurrent）：
+  * ConcurrentHashMap
+  * CopyOnWriteArrayList/CopyOnWriteArraySet
+  * ConcurrentLinkedQueue
+  * BlockingQueue（ArrayBlockingQueue、LinkedBlockingQueue）
+  * ConcurrentSkipListMap/ConcurrentSkipListSet
+
+ArrayList vs Vector：
+- 线程安全：ArrayList 不同步，效率高；Vector 同步，效率低
+- 扩容：ArrayList 默认扩容 50%；Vector 默认扩容 100%
+- 推荐使用：优先使用 ArrayList，需要线程安全时用 Collections.synchronizedList() 或 CopyOnWriteArrayList
+
+四、Spring 框架与微服务真题
+1. Spring IOC 和 AOP 的原理分别是什么？Spring 如何解决 Bean 的循环依赖问题？
+答：
+IOC（Inversion of Control，控制反转）：
+- 原理：将对象的创建和管理交给 Spring 容器，通过依赖注入（DI）实现组件解耦。
+- 实现方式：构造器注入、setter 注入、字段注入（@Autowired）
+- 核心容器：BeanFactory（基础）、ApplicationContext（扩展功能更多）
+
+AOP（Aspect-Oriented Programming，面向切面编程）：
+- 原理：将横切关注点（日志、事务、安全等）从业务逻辑中分离出来，动态织入到目标方法中。
+- 实现方式：
+  * JDK 动态代理：基于接口，目标类必须实现接口
+  * CGLIB 代理：基于继承，生成目标类的子类
+- 核心概念：切面（Aspect）、连接点（JoinPoint）、通知（Advice）、切入点（Pointcut）
+
+循环依赖解决：
+- 三级缓存机制：
+  1. singletonObjects：存放完全初始化好的 Bean
+  2. earlySingletonObjects：存放提前暴露的 Bean（未填充属性）
+  3. singletonFactories：存放 Bean 工厂，用于创建早期引用
+- 仅支持单例模式的 setter 注入循环依赖，构造器注入无法解决
+
+2. Spring Boot 自动配置的原理是什么？@SpringBootApplication 注解包含哪些核心注解？
+答：
+自动配置原理：
+- @EnableAutoConfiguration：启用自动配置
+- 扫描 classpath 下的 META-INF/spring.factories 文件
+- 加载 EnableAutoConfiguration 配置类（按需加载，通过@Conditional 判断）
+- 根据条件注解（@ConditionalOnClass、@ConditionalOnMissingBean 等）决定是否生效
+
+@SpringBootApplication 包含：
+- @SpringBootConfiguration：标注配置类，相当于@Configuration
+- @EnableAutoConfiguration：启用自动配置
+- @ComponentScan：组件扫描，默认扫描启动类所在包及其子包
+
+3. Spring Cloud Alibaba 中的 Nacos 和 Sentinel 分别有什么作用？如何在项目中使用 Nacos 实现配置中心？
+答：
+Nacos 作用：
+- 注册中心：服务发现与服务注册
+- 配置中心：集中管理配置，支持动态刷新
+
+Sentinel 作用：
+- 流量控制：QPS 限流、线程数限流
+- 熔断降级：异常比例、响应时间、慢调用比例
+- 系统保护：系统负载、CPU 使用率等
+
+使用 Nacos 配置中心：
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>com.alibaba.cloud</groupId>
+    <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+</dependency>
+```
+
+```yaml
+# bootstrap.yml
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: localhost:8848
+        file-extension: yaml
+        namespace: your-namespace-id
+```
+
+```java
+// 使用@RefreshScope 支持动态刷新
+@RestController
+@RefreshScope
+public class ConfigController {
+    @Value("${config.key:default}")
+    private String configValue;
+}
+```
+
+4. @Autowired 和@Resource 的区别是什么？如何实现 Spring Bean 的懒加载？
+答：
+区别：
+- 来源：@Autowired 是 Spring 注解；@Resource 是 JSR-250 规范注解
+- 装配方式：@Autowired 默认按类型装配；@Resource 默认按名称装配
+- 属性：@Autowired 配合@Qualifier 指定名称；@Resource 通过 name 属性指定
+- 提供者：@Autowired 需要 CommonAnnotationPackage；@Resource 是 JDK 原生支持
+
+懒加载实现：
+- 全局懒加载：application.yml 中 spring.main.lazy-initialization=true
+- 单个 Bean：@Lazy 注解
+```java
+@Component
+@Lazy
+public class MyService { }
+```
+
+- 配置类：@Configuration(proxyBeanMethods = false) + @Lazy
+- 原理：第一次使用时才创建 Bean，而不是容器启动时
+
+5. MyBatis 中#{}和${}的区别是什么？如何实现分页查询？
+答：
+区别：
+- #{}：预编译处理，会将参数替换为？，然后由 JDBC 驱动设置参数值，防止 SQL 注入
+- ${}：字符串替换，直接将参数拼接到 SQL 中，存在 SQL 注入风险
+- 使用建议：优先使用#{}，只有在动态表名、排序字段等特殊场景才用${}
+
+分页查询实现：
+方式一：Limit 关键字（MySQL）
+```xml
+<select id="selectByPage" resultType="User">
+    SELECT * FROM user LIMIT #{offset}, #{pageSize}
+</select>
+```
+
+方式二：PageHelper 插件（推荐）
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>com.github.pagehelper</groupId>
+    <artifactId>pagehelper-spring-boot-starter</artifactId>
+</dependency>
+```
+
+```java
+// Service 层
+PageHelper.startPage(pageNum, pageSize);
+List<User> users = userMapper.selectAll();
+PageInfo<User> pageInfo = new PageInfo<>(users);
+```
+
+方式三：RowBounds（内存分页，不推荐大数据量）
+
+五、数据库与 SQL 优化真题
+1. MySQL 中 InnoDB 引擎的行锁是如何实现的？什么是间隙锁和 Next-Key Lock？
+答：
+行锁实现：
+- InnoDB 行锁是通过给索引上的索引项加锁来实现的
+- 只有通过索引条件检索数据，InnoDB 才使用行级锁；否则使用表锁（全表扫描）
+- 三种行锁算法：Record Lock、Gap Lock、Next-Key Lock
+
+间隙锁（Gap Lock）：
+- 锁定一个范围，但不包含记录本身
+- 目的：防止其他事务在这个间隙插入记录，解决幻读问题
+- 示例：SELECT * FROM t WHERE id > 10 FOR UPDATE; 会锁定 (10, +∞) 这个区间
+
+Next-Key Lock：
+- 是 Record Lock 和 Gap Lock 的结合，既锁住记录本身，也锁住记录的间隙
+- 锁定范围：(前一个间隙，当前记录]
+- 默认在 RR（可重复读）隔离级别下使用，解决幻读问题
+
+2. 什么是索引最左前缀原则？如何创建高效的索引？为什么建议使用自增主键？
+答：
+最左前缀原则：
+- 联合索引中，查询必须从索引的最左边列开始匹配
+- 不能跳过索引中的列，否则无法使用该索引
+- 示例：索引 (a,b,c)，可以支持 a、(a,b)、(a,b,c) 查询，但不支持 b、(b,c)、(a,c)
+
+创建高效索引：
+- 选择区分度高的列：如身份证号、手机号
+- 为经常用于 WHERE、ORDER BY、GROUP BY 的列建索引
+- 使用前缀索引：长字符串可只索引前 N 个字符
+- 覆盖索引：查询的列都在索引中，避免回表
+- 避免过多索引：影响写入性能
+- 定期删除不用的索引
+
+自增主键优势：
+- 插入性能好：新记录直接追加到末尾，减少页分裂
+- 减少碎片：数据连续存储，提高查询效率
+- 锁竞争小：并发插入时减少间隙锁冲突
+- 主键聚簇：InnoDB 使用聚簇索引，数据按主键顺序存储
+
+3. 如何分析 MySQL 慢查询？EXPLAIN 执行计划中各字段的含义是什么？
+答：
+慢查询分析步骤：
+1. 开启慢查询日志：slow_query_log=ON
+2. 设置阈值：long_query_time=1（秒）
+3. 查看慢查询：mysqldumpslow 工具分析
+4. EXPLAIN 分析 SQL：找出性能瓶颈
+5. 优化：添加索引、改写 SQL、调整配置
+
+EXPLAIN 字段含义：
+- id：SELECT 标识符，数字越大优先级越高
+- select_type：查询类型（SIMPLE、PRIMARY、SUBQUERY、DERIVED 等）
+- table：显示哪张表
+- type：连接类型（性能从好到坏：system > const > eq_ref > ref > range > index > ALL）
+- possible_keys：可能使用的索引
+- key：实际使用的索引
+- key_len：索引长度
+- rows：扫描的行数（估算值）
+- Extra：额外信息（Using index=覆盖索引；Using where=需要回表；Using temporary=临时表；Using filesort=文件排序）
+
+4. 数据库事务的隔离级别有哪些？不同隔离级别会导致什么问题？
+答：
+四种隔离级别（SQL 标准）：
+1. READ UNCOMMITTED（读未提交）：
+   - 允许读取未提交的事务
+   - 问题：脏读、不可重复读、幻读
+
+2. READ COMMITTED（读已提交）：
+   - 只能读取已提交的事务
+   - 问题：不可重复读、幻读
+   - Oracle、SQL Server 默认级别
+
+3. REPEATABLE READ（可重复读）：
+   - 同一事务中多次读取结果一致
+   - 问题：幻读（但 InnoDB 通过 Next-Key Lock 解决了）
+   - MySQL 默认隔离级别
+
+4. SERIALIZABLE（串行化）：
+   - 强制事务串行执行
+   - 无并发问题，但性能最低
+
+并发问题：
+- 脏读：读到未提交的数据
+- 不可重复读：同一事务中两次读取不一致
+- 幻读：同一事务中两次查询记录数不一致
+
+5. 什么是分库分表？在什么情况下需要使用分库分表？常见的分库分表策略有哪些？
+答：
+分库分表：
+- 分库：将数据库分散到多个物理库，解决单库连接数和资源限制
+- 分表：将大表拆分成多个小表，解决单表数据量过大的问题
+
+使用场景：
+- 单表数据量超过 1000 万行
+- 单库 QPS 过高（如超过 5000）
+- 存储空间不足
+- 业务需要水平扩展
+
+分片策略：
+- 哈希分片：hash(user_id) % 库数，数据分布均匀，但扩容困难
+- 范围分片：按时间、ID 范围分片，便于扩容，但可能数据倾斜
+- 地理分片：按地区分库，就近访问
+- 业务分片：按业务类型分库
+
+常用中间件：
+- ShardingSphere（Sharding-JDBC）
+- MyCat
+- Atlas
+
+六、业务场景与系统设计真题
+1. 天喻软件核心业务涉及 PDM/PLM 系统，请设计一个文档版本控制系统，需要考虑哪些核心功能？
+答：
+核心功能：
+- 版本管理：
+  * 版本号规则：主版本号。次版本号。修订号（如 1.0.0）
+  * 版本历史：记录所有历史版本，支持查看和回滚
+  * 版本对比：支持不同版本间的差异对比
+
+- 检入检出（Check-in/Check-out）：
+  * 检出锁定：防止多人同时修改同一文档
+  * 检入解锁：更新版本并释放锁
+  * 乐观锁/悲观锁策略
+
+- 权限控制：
+  * 基于角色的访问控制（RBAC）
+  * 细粒度权限：读、写、删除、审批等
+  * 数据权限：按项目、部门隔离
+
+- 审批流程：
+  * 工作流引擎：定义审批流程
+  * 状态流转：草稿→审核中→已发布→已归档
+  * 会签/或签、驳回、撤回
+
+- 存储管理：
+  * 大文件存储：使用对象存储（如 MinIO、OSS）
+  * 增量存储：只存储变化部分，节省空间
+  * 快照备份：定期备份，支持灾难恢复
+
+- 审计日志：
+  * 操作日志：记录所有用户操作
+  * 版本变更日志：谁在什么时候修改了什么
+  * 可追溯性：满足质量管理体系要求
+
+2. 如何实现 BOM（物料清单）的层级查询？有哪些优化方案可以避免递归查询的性能问题？
+答：
+实现方式：
+方式一：递归查询（传统方式）
+```java
+public List<BOMNode> getBOMTree(Long parentId) {
+    List<BOMNode> children = bomMapper.selectByParentId(parentId);
+    for (BOMNode child : children) {
+        child.setChildren(getBOMTree(child.getId())); // 递归
+    }
+    return children;
+}
+```
+缺点：N+1 问题，查询次数多，性能差
+
+方式二：CTE 递归查询（MySQL 8.0+）
+```sql
+WITH RECURSIVE bom_tree AS (
+    SELECT id, parent_id, name, 0 AS level FROM bom WHERE parent_id = 0
+    UNION ALL
+    SELECT b.id, b.parent_id, b.name, bt.level + 1 
+    FROM bom b INNER JOIN bom_tree bt ON b.parent_id = bt.id
+)
+SELECT * FROM bom_tree ORDER BY level, id;
+```
+
+方式三：路径枚举（推荐）
+- 增加 path 字段：存储完整路径，如"0/1/5/12"
+- 查询子节点：WHERE path LIKE '0/1/%'
+- 查询父节点：WHERE '0/1/5/12' LIKE CONCAT(path, '%')
+
+方式四：嵌套集模型
+- 增加 left_ 和 right_ 字段
+- 查询子节点：WHERE left_ BETWEEN parent.left_ AND parent.right_
+- 适合读多写少的场景
+
+优化方案：
+- 缓存：使用 Redis 缓存 BOM 树结构
+- 预计算：提前计算好层级关系存储在宽表中
+- 分批加载：懒加载子节点，按需查询
+- 物化路径：使用专门的表存储路径关系
+
+3. 在 PDM 系统中，文档预览服务如何应对突发高并发流量？请设计一个高可用的解决方案。
+答：
+高可用架构设计：
+
+层次架构：
+1. CDN 加速层：
+   - 静态资源（PDF、图片）分发到 CDN 边缘节点
+   - 用户就近访问，减少源站压力
+
+2. 负载均衡层：
+   - Nginx/SLB 做负载均衡
+   - 轮询、加权轮询、IP Hash 等策略
+
+3. 应用服务层：
+   - 微服务集群部署，自动扩缩容
+   - 无状态设计，支持水平扩展
+   - 限流降级：Sentinel 控制 QPS
+
+4. 缓存层：
+   - Redis 缓存热点文档的预览文件
+   - 本地缓存（Caffeine）缓存极热数据
+   - 多级缓存策略
+
+5. 消息队列削峰：
+   - 文档转换请求异步化处理
+   - RabbitMQ/Kafka 缓冲流量
+   - 后台服务消费转换
+
+6. 存储层：
+   - 对象存储（MinIO/OSS）存储文档
+   - 读写分离，主从复制
+   - 分片存储，提高并发能力
+
+关键技术点：
+- 文档预转换：上传时即转换为预览格式（PDF/SVG）
+- 分页加载：大文档分片加载
+- 水印保护：动态添加用户水印
+- 监控告警：实时监控 QPS、响应时间、错误率
+
+4. 请描述你在之前项目中遇到的最大技术挑战，你是如何解决的？（请使用 STAR 法则回答）
+答：
+STAR 法则框架：
+- Situation（情境）：描述背景和问题
+- Task（任务）：你的职责和目标
+- Action（行动）：你采取的具体措施
+- Result（结果）：最终成果和收获
+
+示例模板：
+Situation：
+"在上一个电商项目中，大促期间订单系统面临巨大压力，曾经出现过数据库连接池耗尽、接口响应超时的问题，严重影响用户体验。"
+
+Task：
+"作为后端负责人，我需要在一个月内优化系统性能，确保能够支撑双十一期间 10 倍于日常的流量。"
+
+Action：
+1. 性能分析：使用 APM 工具定位瓶颈，发现订单创建接口 RT 高达 2 秒
+2. 数据库优化：
+   - 拆分大表，按用户 ID 分库分表
+   - 添加索引，优化慢查询
+   - 读写分离，减轻主库压力
+3. 缓存优化：
+   - 引入 Redis 缓存商品信息、库存信息
+   - 本地缓存热点数据
+4. 异步化改造：
+   - 非核心逻辑（发短信、积分）异步处理
+   - RocketMQ 削峰填谷
+5. 限流降级：
+   - Sentinel 设置 QPS 阈值
+   - 准备降级预案
+
+Result：
+- 订单创建接口 RT 从 2s 降低到 200ms
+- 成功支撑双十一峰值 QPS 5000+
+- 系统零故障，获得公司技术创新奖
+
+5. 如何设计一个高可用的分布式缓存系统？需要考虑哪些缓存问题，如缓存穿透、缓存击穿、缓存雪崩？
+答：
+高可用设计：
+- 集群部署：Redis Cluster 或 Codis，支持主从复制
+- 数据分片：一致性哈希算法，自动负载均衡
+- 故障转移：哨兵模式或 Cluster 自动 failover
+- 持久化：RDB+AOF 混合持久化
+- 监控告警：Prometheus + Grafana
+
+缓存三大问题及解决方案：
+
+1. 缓存穿透（查询不存在的数据）：
+   问题：请求直接打到数据库
+   解决：
+   - 布隆过滤器：快速判断 key 是否存在
+   - 缓存空值：key=null，设置较短过期时间
+   - 接口校验：参数合法性检查
+
+2. 缓存击穿（热点 key 过期瞬间大量请求）：
+   问题：单个热点 key 失效导致数据库压力激增
+   解决：
+   - 互斥锁：synchronized/Redis 分布式锁，只让一个线程查 DB
+   - 永不过期：逻辑上永不过期，后台异步更新
+   - 提前预热：热点数据提前加载到缓存
+
+3. 缓存雪崩（大量 key 同时过期或服务宕机）：
+   问题：缓存大面积失效，数据库崩溃
+   解决：
+   - 随机过期时间：基础时间 + 随机值
+   - 高可用架构：Redis 集群，多副本
+   - 限流降级：数据库达到阈值后限流
+   - 多级缓存：本地缓存 + 分布式缓存
+
+七、其他真题
+1. 什么是 Servlet？请描述 Servlet 的生命周期。
+答：
+Servlet：
+- 运行在服务器端的 Java 小程序，用于处理 HTTP 请求和响应
+- 是 Java Web 开发的基础技术
+- 遵循 javax.servlet 规范
+
+生命周期（三个核心方法）：
+1. init() 初始化：
+   - 容器调用，只执行一次
+   - 加载配置，初始化资源
+   - ServletConfig 对象传递配置信息
+
+2. service() 服务：
+   - 每次请求调用一次
+   - 根据请求类型调用 doGet()、doPost() 等
+   - 多线程并发访问
+
+3. destroy() 销毁：
+   - 容器关闭或移除 Servlet 时调用
+   - 释放资源，如数据库连接
+
+完整流程：
+加载类 → 创建实例 → init() → service()(多次) → destroy()
+
+2. Java 中异常分为哪几类？Error 和 Exception 的区别是什么？如何自定义异常？
+答：
+异常分类：
+- Throwable（所有异常的父类）
+  - Error（错误）：系统级错误，程序无法处理
+    * OutOfMemoryError：内存不足
+    * StackOverflowError：栈溢出
+    * VirtualMachineError：JVM 错误
+  - Exception（异常）：程序可以处理的异常
+    * 受检异常（Checked）：编译期检查，必须处理
+      - IOException、SQLException、ClassNotFoundException
+    * 非受检异常（Unchecked/Runtime）：运行时异常
+      - NullPointerException、ArrayIndexOutOfBoundsException
+      - IllegalArgumentException、ClassCastException
+
+Error vs Exception：
+- Error：严重问题，应用程序无法恢复，不应该 try-catch
+- Exception：程序问题，可以捕获并处理
+
+自定义异常：
+```java
+// 自定义受检异常
+public class BusinessException extends Exception {
+    public BusinessException(String message) {
+        super(message);
+    }
+    public BusinessException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+// 自定义运行时异常
+public class MyRuntimeException extends RuntimeException {
+    public MyRuntimeException(String message) {
+        super(message);
+    }
+}
+
+// 使用
+throw new BusinessException("业务处理失败");
+```
+
+3. 什么是面向对象的三大特性？请结合实际项目举例说明。
+答：
+三大特性：封装、继承、多态
+
+1. 封装（Encapsulation）：
+- 隐藏内部实现细节，只暴露公共接口
+- 使用 private 修饰成员变量，提供 public 的 getter/setter
+- 好处：安全性高，便于维护
+
+实际例子：
+```java
+public class User {
+    private String password; // 私有化，不直接暴露
+    
+    public void setPassword(String pwd) {
+        // 加密处理
+        this.password = encrypt(pwd);
+    }
+}
+```
+
+2. 继承（Inheritance）：
+- 子类继承父类的属性和方法
+- 使用 extends 关键字
+- 好处：代码复用，扩展性强
+
+实际例子：
+```java
+// 基类
+public abstract class Document {
+    protected String title;
+    protected String version;
+    public abstract void preview(); // 抽象方法
+}
+
+// 子类
+public class CADDocument extends Document {
+    @Override
+    public void preview() {
+        // CAD 图纸预览逻辑
+    }
+}
+```
+
+3. 多态（Polymorphism）：
+- 同一操作作用于不同对象，产生不同的行为
+- 分为编译时多态（重载）和运行时多态（重写）
+- 好处：灵活性高，易于扩展
+
+实际例子：
+```java
+public interface Exportable {
+    void export();
+}
+
+public class PDFExporter implements Exportable {
+    public void export() { System.out.println("导出 PDF"); }
+}
+
+public class ExcelExporter implements Exportable {
+    public void export() { System.out.println("导出 Excel"); }
+}
+
+// 使用
+List<Exportable> exporters = Arrays.asList(new PDFExporter(), new ExcelExporter());
+for (Exportable exporter : exporters) {
+    exporter.export(); // 多态，实际调用各自实现
+}
+```
+
+4. JDK 和 JRE 的区别是什么？JVM 和 JDK、JRE 的关系是什么？
+答：
+JDK（Java Development Kit）：
+- Java 开发工具包
+- 包含 JRE + 开发工具（javac、java、javadoc、jdb 等）
+- 面向开发者，用于编写和运行 Java 程序
+
+JRE（Java Runtime Environment）：
+- Java 运行时环境
+- 包含 JVM + 核心类库（rt.jar）
+- 面向用户，只能运行 Java 程序，不能开发
+
+JVM（Java Virtual Machine）：
+- Java 虚拟机，负责执行字节码
+- 跨平台的核心，不同平台有不同实现
+- 负责内存管理、垃圾回收、安全检查等
+
+关系图：
+```
+JDK = JRE + 开发工具
+     = (JVM + 核心类库) + 开发工具
+
+范围：JDK > JRE > JVM
+```
+
+5. 你了解哪些设计模式？请结合实际项目举例说明你使用过的设计模式。（AI 生成）
+答：
+常用设计模式（23 种）：
+
+创建型模式（5 种）：
+- 单例模式（Singleton）：保证一个类只有一个实例
+- 工厂模式（Factory）：定义创建对象的接口
+- 建造者模式（Builder）：复杂对象分步构建
+- 原型模式（Prototype）：通过复制创建对象
+- 抽象工厂（Abstract Factory）：创建相关对象族
+
+结构型模式（7 种）：
+- 适配器模式（Adapter）：转换接口
+- 装饰器模式（Decorator）：动态添加功能
+- 代理模式（Proxy）：控制对对象的访问
+- 外观模式（Facade）：提供统一接口
+- 组合模式（Composite）：树形结构
+- 桥接模式（Bridge）：分离抽象和实现
+- 享元模式（Flyweight）：共享细粒度对象
+
+行为型模式（11 种）：
+- 观察者模式（Observer）：一对多依赖
+- 策略模式（Strategy）：定义算法族
+- 模板方法模式（Template Method）：算法骨架
+- 责任链模式（Chain of Responsibility）：多个对象处理
+- 命令模式（Command）：请求封装为对象
+- 状态模式（State）：对象内部状态改变行为
+- 访问者模式（Visitor）：作用于对象结构
+- 中介者模式（Mediator）：封装交互
+- 备忘录模式（Memento）：保存状态
+- 迭代器模式（Iterator）：遍历集合
+- 解释器模式（Interpreter）：解释执行语言
+
+实际项目例子：
+
+1. 单例模式 - Spring Bean：
+```java
+@Service
+public class UserService { // Spring 默认单例
+    // ...
+}
+```
+
+2. 工厂模式 - 文档导出：
+```java
+public class DocumentFactory {
+    public static Document createDocument(String type) {
+        switch (type) {
+            case "PDF": return new PDFDocument();
+            case "WORD": return new WordDocument();
+            default: throw new IllegalArgumentException();
+        }
+    }
+}
+```
+
+3. 策略模式 - 支付方式：
+```java
+public interface PaymentStrategy {
+    void pay(BigDecimal amount);
+}
+
+@Component
+public class AlipayStrategy implements PaymentStrategy {
+    public void pay(BigDecimal amount) { /* 支付宝支付 */ }
+}
+
+@Component
+public class WechatPayStrategy implements PaymentStrategy {
+    public void pay(BigDecimal amount) { /* 微信支付 */ }
+}
+```
+
+4. 模板方法模式 - 文档审批：
+```java
+public abstract class ApprovalTemplate {
+    // 模板方法
+    public final void process() {
+        submit();      // 提交
+        review();      // 审核（抽象）
+        archive();     // 归档
+    }
+    protected abstract void review();
+}
+```
+
+5. 观察者模式 - 事件监听：
+```java
+// Spring 事件机制
+ApplicationEventPublisher publisher;
+publisher.publishEvent(new DocumentCreatedEvent(this, doc));
+
+@EventListener
+public void handle(DocumentCreatedEvent event) {
+    // 监听处理
+}
+```

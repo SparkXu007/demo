@@ -1,0 +1,211 @@
+
+1.线程的生命周期，线程有哪些状态
+    线程通常有5中状态，即创建、就绪、运行、阻塞、死亡。
+    新建状态（New）：即新创建了一个线程对象。
+    就绪状态（Runnable）:线程对象创建后，其他线程调用了该对象的start()方法。
+        该状态的线程位于可运行线程池中，变得可运行，等待获取CPU的使用权。
+    运行状态（Running）:就绪状态的线程获取到来CPU使用权，执行程序代码
+    阻塞状态（Blocked）:阻塞状态是运行的线程因为某种原因，放弃了CPU的使用权，暂时停止运行。
+        等待阻塞：运行的线程执行wait()方法，该线程会释放占用的所有资源，JVM会把该线程放入“等待池”中。
+                进入这个状态后，线程不能自动唤醒，必须依靠其他的线程调用notify()方法或者notifyAll()方法才能被唤醒，线程重新进入就绪状态。
+                wait()方法是Object类中的方法
+        同步阻塞：运行的线程在获取对象的同步锁时，若该同步锁被别的线程占用，则JVM会把该线程放入“锁池”中。
+        其他阻塞：运行的线程执行sleep()或者join()方法，或者发出了I/O请求时，JVM会把该线程置为阻塞状态。
+                当sleep()方法超时、join等待的线程终止或者超时、或者I/O处理完毕，线程重新进入就绪状态。
+                sleep()方法是Thread类的方法。
+    死亡状态（Dead）:线程执行完毕或者因异常退出了run()方法，该线程结束生命周期
+2.sleep,wait,yield,join
+    等待池：
+        当我们调用wait()方法后，线程会放到等待池中，等待池中的线程不会去竞争同步锁。只有调用了notify()或者notifyAll()方法后，
+        等待池中的线程才有可能从等待池进入到锁池中，才能去竞争同步锁。
+        只是notify()方法是随机从等待池中选出一个线程放到锁池，而notifyAll()则是将等待池中的所有线程全部放到锁池。
+    锁池：
+        所有需要竞争同步锁的线程都会放在锁池当中。比如当前对象的锁已被一个线程得到，则其他线程需要在这个对象的锁池中进行等待，
+        当前面的线程释放同步锁后，锁池中的线程去竞争同步锁，当某个线程得到同步锁后，则该线程进入就绪队列，等待cpu分配资源
+    sleep、wait:
+        sleep()是Thread类的静态方法，wait()方法是Object类的本地方法。
+        sleep()不会释放锁，但是wait()会释放锁。
+        sleep()方法不依赖同步器synchronized，但是wait()需要synchronized关键字
+        sleep()方法不需要被唤醒（休眠之后退出阻塞），而wait不带参数的方法需要
+        sleep()一般用于当前线程休眠，wait则多用于多线程之间的切换
+        sleep()会让出cpu执行时间且强制切换上下文，而wait()不一定，wait后还是有可能重新竞争到锁，继续执行的
+
+    yield、join:
+        yield()执行后，线程直接进入就绪状态，马上释放来cpu的执行权，但是依然保留了CPU的执行资格，
+            所以有可能CPU下次进行线程调度还会让这个线程获取到执行权继续执行。
+        join()执行后，线程进入阻塞状态。 如果在B线程中调用A线程的join()方法，则阻塞的是B线程。
+4.说说你对线程安全的理解
+
+5.Thread和Runnable的区别
+    Thread是类，Runnable是接口。类是单继承，接口是多实现。
+    Thread实现了Runnable接口。
+    Thread是作为线程载体，负责线程调度，Runnable是定义任务逻辑，即业务代码
+6.说说你对守护线程的理解
+    守护线程：为所有的非守护线程提供服务的线程。任何一个守护线程都是整个JVM中所有非守护线程的保姆。
+            守护线程依赖整个进程而运行，如果所有的非守护线程都结束了，则JVM会强制终止所有守护线程，确保进程退出。
+            Thread daemon = new Thread(() -> {
+                try { Thread.sleep(1000); } catch (InterruptedException e) {}
+            });
+            daemon.setDaemon(true);
+            daemon.start();
+            // 主线程结束时，守护线程被强制终止
+            若守护线程被阻塞（如 sleep），JVM 仍会强制终止。
+    守护线程用途‌：
+        适用于后台服务（如垃圾回收器、定时任务）。
+        不应执行关键业务逻辑（如文件操作、网络请求）
+        举例：GC垃圾回收线程就是经典的守护线程。
+    如何将线程设置为守护线程？
+        thread.setDaemon(true);
+        thread.start();
+        必须在thread.start()之前设置，否则会抛出异常
+        在守护线程中产生的新线程也是守护线程
+7.ThreadLocal的原理和使用场景
+    每一个Thread对象都含有一个ThreadLocalMap类型的成员变量threadLocals，
+    它存储本线程中所有的ThreadLocal对象及其对应的值，键值key就是ThreadLocal对象，value值可以是任意类型。
+    而且这个键值key是一个弱引用，可以被垃圾回收期回收
+
+    当执行ThreadLocal的set()方法时，要先获取当前线程对象，然后获取当前线程的ThreadLocalMap对象，
+        再以当前ThreadLocal对象为key，将值存储到ThreadLocalMap对象中
+    当执行ThreadLocal的get()方法时，也是要先获取当前线程对象，然后获取当前线程的ThreadLocalMap对象，
+        再以当前ThreadLocal对象为key，获取对应的value值。
+
+    由于每一条线程均有各自私有的ThreadLocalMap，维护了自己的threadLocals，所以是线程安全的。
+
+    使用场景：
+        ‌数据库连接管理‌
+            每个线程独立持有数据库连接，避免线程间共享连接导致的并发问题。
+            Spring框架在事务开始时，会给当前线程绑定一个JDBC Connection，在整个事务过程中，都是使用该线程绑定的connection来执行
+            数据库操作，实现了事务的隔离性。Spring框架里面就是使用的ThreadLocal来实现这种隔离。
+        ‌事务上下文传递‌
+            在线程池中传递事务上下文，确保事务一致性。
+        ‌线程状态跟踪‌
+            存储线程局部状态（如用户会话信息），简化代码逻辑。
+8.ThreadLocal内存泄漏问题
+    ThreadLocalMap中的key为ThreadLocal的弱引用，如果ThreadLocal在没有外部强引用的情况下，会在垃圾回收的时候清除掉。
+    这样一来，就会出现key为null的value，而value又是强引用，不会被垃圾回收清理，这样就是导致内存泄漏。
+    解决方案：
+        显示调用remove()方法。
+9.并发三大特性
+    原子性（Atomicity）
+        只操作不可分开，要么全部成功，要么全部失败
+        ‌关键作用‌：防止数据竞争（Data Race），避免部分操作被其他线程干扰。
+        实现方式：
+            锁机制：如synchronized、ReentrantLock
+            原子变量：如AtomicInteger、AtomicReference
+            CAS操作：
+    可见性(Visibility)
+        确保一个线程对共享变量的修改对其他线程可见
+        关键作用：防止缓存一致性问题，确保线程间数据同步
+        实现方式：
+            Volatile关键字：保证变量修改对所有线程可见
+            ‌锁机制‌：如 synchronized、ReentrantLock。
+    有序性(Ordering)
+            控制指令执行的顺序，防止指令重排序（Instruction Reordering）。
+            关键作用：确保操作按照预期书序执行，避免逻辑错误
+            实现方式：
+                Volatile关键字：禁止指令重排
+                锁机制‌：保证锁操作前后的指令顺序。
+    这三者共同确保多线程环境下的数据一致性与正确性
+10.为什么使用线程池？解释下线程池参数？
+    降低资源消耗：提高线程利用率，降低创建和销毁线程的消耗
+    提高响应速度：任务来了，直接有线程可用，而不是先创建线程，再执行
+    提高线程的可管理性：使用线程池可统一分配、管理
+
+    corePoolSize代表核心线程数，也就是正常情况下创建的线程数，这些线程创建后，并不会消除，而是一种常驻线程。
+    maxinumPoolSize代表最大线程数，表示允许被创建的最大线程数。
+            当当前任务较多，核心线程不够用，且阻塞队列放满的情况下，则会创建新的线程，但是线程的总数不会超过最大线程数
+    keepAliveTime、unit代表空闲线程存活时间。即超出核心线程数的线程，如果空闲一定的时间，则会被消除
+    workQueue阻塞队列，用于存放待执行的任务。当核心线程都已被使用，还有任务进来，则先放入队列中，如果队列被放满且还有新的任务进来，则创建新的线程
+    ThreadFactory线程工厂，用来生产线程。
+    Handler任务拒绝策略。
+        JDK内置策略‌：
+        AbortPolicy（默认）：抛出 RejectedExecutionException 异常。
+        CallerRunsPolicy：由提交任务的线程（如主线程）直接执行任务，防止任务丢失。
+        DiscardPolicy：静默丢弃任务。
+        DiscardOldestPolicy：丢弃队列中最老的任务，然后尝试提交新任务。
+        ‌生产建议‌：建议使用 CallerRunsPolicy 或自定义策略（如记录日志、降级处理），避免服务雪崩。
+
+        有两种场景，一种是手动调用shutDown()等方法关闭线程池，这时候即使线程池内部正在执行的任务会继续执行，但不再接受新任务，也就是拒绝。
+        还有一种是，达到来线程池的最大线程数，此时没有能力再处理新的任务，也就是拒绝
+11.线程池处理流程
+    线程池执行任务----核心线程是否已满------任务队列是否已满--------是否达到最大线程数-------拒绝
+12.线程池中阻塞队列的作用？为什么是先添加到阻塞队列而不是先创建最大线程
+    可以分为两个方面来讲，即有任务和没任务。
+    有任务的场景是，当线程池核心线程满载时，新任务会放入队列中等待，而不是立即创建线程，这样可以有效控制线程数量，节省资源。
+                而且和非阻塞队列不同，当队列满时，会阻塞等待，而不是立即返回结果，可能导致任务丢失
+    无任务的场景时，阻塞队列的take()方法，会使线程在无任务时进入等待状态，释放CPU资源，显著降低系统负载
+
+    线程的创建和销毁比较耗费资源。
+    注意：若核心线程空闲，任务会直接分配给核心线程执行，‌不会先进入阻塞队列‌。
+13.线程池线程复用的原理
+    线程与任务解耦
+        线程池将线程和任务分离，线程负责执行任务，而任务独立提交。
+    循环任务机制
+        每个线程执行一个循环任务，在这个循环任务中，不停检查是否有需要执行的任务，如果有，则执行。
+14.线程池的拒绝策略
+    AbortPolicy(默认)：直接抛出异常 RejectedExecutionException
+    CallerRunsPolicy：将任务交给调用线程执行
+    DiscardPolicy：丢弃任务，不抛出异常
+    DiscardOldestPolicy：丢弃队列中最旧的任务，尝试重新提交新任务
+15.Java各种锁
+    悲观锁：先加锁，再操作（总假设会冲突） synchronized,ReentrantLock
+    乐观锁：先操作，再验证（总假设不冲突） CAS,Atomic*,版本号
+
+    公平锁：严格排队，先到先得，吞吐量低 new ReentrantLock(true)
+    非公平锁：允许插队，吞吐量高 synchronized,ReentrantLock 默认是非公平锁
+
+    共享锁：共享，读读并发 ReentrantReadWriteLock.readLock()
+    排它锁: 独占，写写/读写互斥 synchronized,ReentrantLock
+
+    可重入锁：同一线程可反复进入已获锁的同步块，避免自己把自己锁死 synchronized,ReentrantLock
+            内部有个计数器，每进入一层就+1，出去一层就-1，知道计数器变成0，才算真正释放了锁。
+16.synchronized锁升级过程
+    偏向锁----出现竞争----》轻量锁----自旋失败----》重量锁
+
+
+
+
+17.为什么不建议使用Execute创建线程池
+18.线程池有哪5种状态？分别代表什么？
+    Running：运行状态
+        线程池新建或调用execute()方法后，处于运行状态，能够接收新的任务
+    ShutDown：关闭状态
+        调用shutDown()方法后，线程池的状态变为ShutDown状态。此时线程池不再接收新的任务，但会执行已提交的等待任务队列中的任务
+    Stop：停止状态
+        调用shutDownNow()方法后，线程池的状态变为Stop状态。此时线程池不再接收新的任务，并且会中断正在处理中的任务
+    Tidying：整理状态
+        中间状态，不做任何处理
+    Terminated：终止状态
+        线程池内部的所有线程都已经终止时，线程池进入Terminated状态。
+18.synchronized和ReentrantLock的区别
+    synchronized:
+        1.synchronized是java的关键字，由JVM实现，属于语言层面的内置锁
+        2.synchronized可以修饰方法、代码块，使用简单，无需手动加锁和释放锁，JVM会自动处理
+        3.synchronized默认是非公平锁
+        4.synchronized不支持中断，一旦线程获取不到锁就会一直等待
+        5.synchronized不支持超时机制
+        6.synchronized通过wait()和notify()实现等待/通知机制
+        7.synchronized有锁升级机制
+
+    ReentrantLock:
+        1.ReentrantLock是 java.util.concurrent.locks包中的一个类，属于显式锁，需要手动获取锁和释放锁
+        2.ReentrantLock需要手动调用lock()、unlock()方法，通常在try-finally块中使用，以确保锁被正确释放
+        3.ReentrantLock支持公平锁和非公平锁，可以通过构造函数指定是否为公平锁
+        4.ReentrantLock提供了lockInterruptibly()方法，允许在等待锁的过程中响应中断
+        5.ReentrantLock提供了tryLock(long timeout, TimeUnit unit)方法，可以在指定的时间内尝试获取锁
+        6.ReentrantLock提供了Condition接口，支持多个条件变量，可以更灵活的控制线程的等待与唤醒
+    相同点：
+        1.都是可重入锁
+19.CAS会碰到ABA问题？如何解决？
+    ABA问题：假设初始值为A，两个线程同时操作这个变量：
+    1.线程1读取变量值为A
+    2.线程2又将变量值从A改为B
+    3.线程2又将变量值从B改为A
+    4.线程1执行CAS操作，发现变量值仍为A，于是认为没有线程修改过它。
+    在这个过程中，尽管 CAS 操作成功了，但线程1并不知道变量在中间经历了 A→B→A 的变化，这在某些场景下（如链表操作）会导致错误。
+
+    如何解决：
+        Java提供了AtomicStampedReference类来解决ABA问题。
+        它通过引入了一个“版本号”（stamp）来跟踪变量的修改历史。每次更新变量时，版本号也会递增。
+        CAS操作不仅检查值是否相等，还检查版本号是否匹配。只有当值和版本号都一致时，CAS才会成功。
+

@@ -1,0 +1,92 @@
+
+1.如何使用自定义注解实现防重复提交
+    自定义注解+AOP的方式
+    先定义自定义注解类，例如RepeatSubmit
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    public @interface RepeatSubmit {
+        enum Type {PARAM, TOKEN};
+
+        TYPE limitType() default TYPE.PARAM;
+
+        long lockTime() default 5;
+    }
+    然后在需要防重复提交的方法上使用该注解
+    然后再定义一个AOP类，用于处理防重复提交逻辑
+2.直播间百万人同时点赞怎么设计
+    1.前端聚合
+        前端将1秒内一个用户的点赞数求和，然后发送给后端。  减少前后端交互次数
+    2.后端API网关聚合
+        后端将1秒内所有用户的点赞数求和
+    3.消息队列削峰
+        将第2步的点赞数之和放入消息队列，下游使用redis缓存，使用increBy，原子增加点赞数，然后持久化到数据库
+3.40亿QQ号如何去重？内存1G.
+    目前最长的qq号应该是10位数字，而int类型的数据范围最大为21亿多，也是10位数字，假设int类型满足存储qq条件,
+    每个int类型是占4个字节，40亿QQ号则需要 4,000,000,000 * 4个字节存储，转换为G则为
+    4,000,000,000 * 4 / 1024 / 1024 / 1024 =14.9G，超过了内存为1G的限制。
+    而如果使用位图的话，每一位代表一个qq号是否存在（0不存在，1存在），而40亿qq号则最多需要40亿位，转换为G则为
+    4,000,000,000 / 8 / 1024 / 1024 / 1024 = 0.5G，满足条件。
+    然后遍历位图，将所有位置为1的索引值收集起来就是去重后的QQ号。
+4.百万级别数据的excel如何快速导入到数据库中
+    使用easyExcel分批读取数据，比如每次读取2000条记录，然后做入库处理。避免一次加载excel中所有数据和数据一次入库。
+    如果excel有多个sheet页，可以考虑使用多线程。
+    启用多线程，每个线程读取指定的一个或者多个sheet页数据，每个线程内，每读取一定的记录数，比如说2000条，做一次入库处理，
+    避免大数据一次入库。
+    当然，这里只考虑了最理想的场景，实际场景中可能存在一些校验等，还有可能数据校验通过，入库失败等一些场景，还有就是是否可以重复导入（重复导入是覆盖还是报错等）
+    最好在表中加一个批次字段，比如batch_no，如果导入数据部分成功，可以根据批次号删除数据，然后重新导入。
+    还有就是增加批次记录表以及批次记录详情表，批次表主要记录批次操作的结果，成功，失败，部分成功等，批次详情表则记录失败的原因等
+4.从mysql千万条数据中搜索到指定的数据
+    1.优先保证查询走索引
+    2.如果走的索引是非聚族索引，尽量保证只查询需要的字段，避免select *，尽量避免回表
+5.在2G大小的文件中，找出高频top100的单词
+    1.采用分块读取策略处理2G大文件，比如每次读取1MB大小的文件内容，避免内存溢出
+    try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+        String line;
+        int chunkSize = 1024 * 1024; // 1MB块大小
+        StringBuilder chunkBuffer = new StringBuilder();
+
+        while ((line = reader.readLine()) != null) {
+            chunkBuffer.append(line).append("\n");
+            // 当缓冲区达到指定大小时处理，清空缓冲区
+            if (chunkBuffer.length() >= chunkSize) {
+                processChunk(chunkBuffer.toString(), wordCount);
+                chunkBuffer.setLength(0); // 清空缓冲区
+            }
+        }
+        // 处理最后剩余的数据
+        if (chunkBuffer.length() > 0) {
+            processChunk(chunkBuffer.toString(), wordCount);
+        }
+    }
+    2.使用HashMap统计单词频次，然后通过Stream API排序获取Top100结果。
+6.有没有碰到mysql执行计划不一致的情况
+    使用force index强制走某个索引即可
+    select * from table force index where xxx;
+7.当给第三方提供接口时，需要注意哪些事?
+    需要提供接口文档。接口设计时，需要注意
+    1.提供的接口遵循RESTful规范，数据格式统一使用json格式。
+    2.考虑安全性。
+        1.确保调用方身份：使用API key，OAuth 2.0，JWT等确保调用方身份。
+        2.敏感数据加密或者脱敏：接口返回的敏感数据（手机号、身份证号等）需加密或脱敏
+        3.参数校验：校验参数类型、格式等
+        4.还可以根据实际情况，考虑是否需要增加限流：比如按照ip，用户，或者接口维度限制QPS
+    3.考虑接口性能
+        1.看能否使用缓存，合理设置缓存过期时间
+        2.看能否使用异步处理。根据实际情况，看能否使用异步线程或者消息队列等异步处理
+    4.日志记录
+        记录接口的请求和响应数据，便于定位（可以存日志文件或者存表）
+8.设计redis的key和value时，有哪些原则
+    key:
+        1.可读性与规范性
+        2.避免key过长
+        3.控制key的数量
+    value：
+        1.选择合理的数据结构
+            比如缓存用户信息，可以使用Hash,统计排行榜/排序，使用zSet等
+        2.避免大value
+        3.设置合适的过期时间
+10.如果JVM频繁Full GC，该如何解决？
+    当JVM频繁出现Full GC是，通常表明内存管理存在严重问题，可能导致应用性能骤降甚至OOM
+    1.内存泄漏

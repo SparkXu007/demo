@@ -1,0 +1,189 @@
+
+1.jdk,jre,jvm的区别与联系
+    jdk:java开发工具 除了jre,还有一些java工具包，如java,javac,jconsole
+    jre:java运行时环境 jvm和一些lib类库
+    jvm:虚拟机
+    jdk>>jre>>jvm
+    User.java----javac-----User.class--------类加载器--------JVM
+2.什么是面相对象
+    面相对象是就是面相java对象，是一种处理问题的角度。
+    这种一般是与面向过程相比较来进行说明。面相过程是指怎么做，着重于做的步骤，而面相对象是指可以做什么，着重于功能。
+    比如洗衣服，从面相过程的角度来说，大致可以分为4步，
+    将衣物放入洗衣机，洗衣机清洗衣物，洗衣机风干衣物，取出衣物
+    而从面相对象的角度来看，参与的对象分为人，洗衣机，其中人可以放衣物和取衣物，而洗衣机可以清洗和烘干。
+
+    面相对象的特性：
+        封装：隐藏对象的内部实现细节，仅暴露必要的接口。
+        继承：继承父类的方法，并作出自己的改变或扩展
+        多态：父类的引用指向子类对象
+            父类类型 变量名 = new 子类对象;
+            变量名.方法名();
+            注意：不能调用子类的特有方法（子类有而父类没有的方法）
+3.final
+    final表示最终的意思。
+    final修饰类：类不能被继承
+    final修饰方法：方法不能被子类覆盖重写，但能被重载
+    final修饰变量：变量一旦被赋值，就不能再更改它的值。但是可以修改它的属性。
+                final User user = new User("tom", 18);
+                user = new User("jerry", 18); // 报错
+                user = new User("tom", 18); // 也报错
+                user.setName("jerry"); // 不报错
+4.==和equals的区别
+    ==比较的是栈中的值。基本数据类型比较的是变量值，而引用类型比较的是对象的内存地址。
+    equals:Object中，equals默认也是使用==。
+        其他类一般会重写equals()方法，以String为例，重写来equals方法，不再是==，而是比较字符串的值。
+5.String,StringBuffer,StringBuilder
+    String是final修饰的，不可变，每次操作都会产生新的String对象
+    StringBuffer和StringBuilder都是在原对象上操作，不会产生新的对象。
+    StringBuffer是线程安全的，StringBuilder是线程不安全的。
+    StringBuffer方法都是synchronized修饰的
+    性能：StringBuilder>StringBuffer>String
+
+    场景：如果字符串内容不需要变更，则优先使用String。
+        如果字符串内容经常变更，且不是多线程共享变量时，则优先使用StringBuilder，
+        如果字符串内容经常变更，且是多线程共享变量时，则优先使用StringBuffer
+6.重载和重写的区别
+    重载：发生在同一个类中，方法名相同，参数列表不同（参数类型不同、参数个数不同、参数顺序不同），
+        方法返回值和访问修饰符可以相同，也可以不同
+    重写：子类重写父类的方法，方法名相同，参数列表也相同，
+        返回值范围小于等于父类，抛出的异常范围小于等于父类；
+        访问修饰符范围大于等于父类；
+        如果父类方法是private修饰，则子类不能重写该方法
+7.接口和抽象类
+    接口只能包含抽象方法（java8前）和常量，Java8+可添加默认方法和静态方法，无构造方法。
+    抽象类可包含抽象方法，非抽象方法，成员变量（可以是多种类型，如常量，String,int等）和构造器。
+    抽象类可以存在非抽象方法和抽象方法，而接口中只能存在抽象方法（public abstract）
+    抽象类中的成员变量可以是各种类型的，如String,int等，而接口中的成员变量只能是public static final类型的
+    抽象类只能继承一个，接口可以实现多个。即抽象类只能继承一个父类，而接口可以实现多个接口类
+
+    两者的设计意图有点区别，接口是对事物的行为的抽象，用于对类的行为进行约束，而抽象类是对事物本身的抽象，主要是代码复用。
+8.List和Set区别
+    List：有序，按对象进入的顺序保存对象，
+          可重复，
+          允许多个NULL元素对象，
+          还可以使用get(int index)获取执行下标的元素
+    Set：无序，
+         不可重复，
+         最多允许一个NULL元素对象
+         不能通过get(int index)获取执行下标的元素
+9.hashCode和equals
+    hashCode()的作用是获取哈希码，也称为散列码，返回值是一个int类型整数，用于确定该对象在哈希表中的索引位置。
+    hashCode()方法是定义在Object类中，所以所有的类都包含有hashCode()。
+    当使用equals()比较两个对象是否相等时，如果对象重写了equals()，则必须也重写hashCode()。
+    因为hashCode()获取的是散列码，如果重写了equals()，而没有重写hashCode()，即使两个对象的值相等，但两个对象的散列码是不相等，
+    而java规范了，如果两个对象相等，则hashCode一定也是相同的，所以需要重写hashCode()。
+10.ArrayList和LinkedList
+    ArrayList: 基于动态数组，连续内存存储，适合下标访问（随机访问）。
+                扩容机制：因为数组长度固定，超出长度存数据时，需要新建数组，然后将老数组的数据拷贝到新数组。
+                        如果不是尾部插入数据，还要涉及元素的移动（往后复制一份，然后插入新数据）。
+                        如果是尾部插入数据并指定初始容量，可以极大提升性能，甚至超过LinkedList，但是初始容量需要根据实际场景定好。
+    LinkedList: 基于链表，可以存储在分散的内存中，适合做数据的插入及删除操作，不适合查询（需要逐一遍历）。
+                遍历LinkedList必须使用Iterator迭代，不要使用for循环遍历。
+                因为每次for循环体内通过get(i)获取元素时，都需要对list重新进行遍历，性能消耗极大。
+    实际项目中，基本使用的都是ArrayList。
+11.HashMap和HashTable区别？底层实现是什么？
+    区别：
+        HashMap方法没有用Synchronized修饰，线程非安全，HashTable线程安全。
+        HashMap允许key和value为null（key允许一个，value无限制，可以多个为null的value），而HashTable不允许。
+            在HashMap中，key为null时，存在下标为0的位置
+    底层实现：
+        都是数组+链表
+        jdk8开始，HashMap引入了红黑树(HashTable没有)，HashMap 在链表长度超过阈值时（默认 8）转换为红黑树优化查找效率，
+        但 Hashtable 仅使用链表。且HashMap在链表长度低于6时，会从红黑树转回链表。
+
+    扩容机制：
+        因为数组长度固定，超过长度存数据时，需要新建数组，然后将老数组的数据拷贝到新数组。
+
+    实际项目中，一般使用HashMap（性能高），针对多线程，一般使用ConcurrentHashMap，基本不是用HashTable
+12.ConcurrentHashMap原理，jdk7和jdk8版本的区别
+    jdk7:
+        数据结构：数组+链表
+        和HashMap类似，只不过ConcurrentHashMap在jdk7中引入了分段锁的概念。
+        Segment数组：所谓的分段锁由多个Segment组成，默认16个。每个Segment包含一个HashEntry数组，每个HashEntry会存放一个键值对或者链表。
+        锁分离：每个Segment有独立的可重入锁ReentrantLock，线程访问特定的Segment时，只锁该Segment，不影响其他Segment。
+        扩容机制：Segment数组大小默认是16，扩容时只锁扩容的Segment，不影响其他Segment
+        性能相比HashTable而言，效率提升了16倍
+
+        读操作：无锁，通过Volatile关键字保证可见性
+        写操作：只锁对应的Segment，不影响其他Segment段
+    jdk8:
+        数据结构：数组+链表+红黑树
+        和jdk7不同的是，jdk8中移除了分段锁，使用CAS和Synchronized的支持高并发读写。
+        底层不再是Segment数组，而是使用Node数组，Node是包含key-value的键值对或者链表
+        锁的是节点，不影响其他节点，扩容也是，只锁扩容的Node节点，不影响其他Node节点
+        读操作：无锁，通过Volatile关键字保证可见性
+        写操作：只锁对应的Node，不影响其他Node,粒度比7小
+13.如何实现一个IOC容器
+    基于注解扫描的方式。
+    1.配置文件配置包扫描路径
+    2.递归包扫描获取.class文件
+    3.反射、确定需要交给IOC管理的类
+    4.对需要注入的类进行依赖注入
+
+    配置文件中指定需要扫描的包路径
+    定义一些注解，例如@Controller()注解表示访问控制层，@Service()注解表示业务层，@Dao()表示数据持久层等
+    针对需要放入IOC容器管理的类，在类上添加对应的注解即可
+
+    当服务启动时，会自动扫描配置的包路径下的所有文件及文件夹信息，会将包下所有的.class添加到一个Set集合，
+    遍历这个Set集合，获取在类上有指定注解的类，并将其交给IOC容器，容器会定义一个安全的Map来存储这些对象。
+    遍历这个IOC容器，获取到每一个类的实例，判断里面是否有依赖其他类的实例，然后进行递归注入。
+14.什么是字节码？采用字节码的好处是什么？
+    即我们常说的.class文件，是由.java文件经过编辑器编译（执行javac命令）后生成的。
+    而一个.java文件到程序运行的步骤大致为：
+    .java文件----编译器javac---->.class文件（JVM可执行的java字节码）----JVM中解释器---->机器可执行的二进制机器码---->程序运行
+    从整个流程来看，字节码文件只面向虚拟机，不面向平台。而不同的平台，有不同的JVM，
+    所以java文件一处编译，多处使用，支持跨平台。
+15.java类加载器有哪些
+    JDK自带3个类加载器：BootstrapClassLoader,ExtClassLoader,AppClassLoader
+    BootstrapClassLoader(‌启动类加载器)是ExtClassLoader的父类加载器（不是使用extends），
+        默认负责加载%JAVA_HOME%/lib下的jar包和class文件
+        用 C++ 编写，无对应的 Java 类（null 表示）。
+        无父类加载器，是所有类加载器的顶层。
+    ExtClassLoader(扩展类加载器)是AppClassLoader的父类加载器（不是使用extends继承），
+        默认负责加载%JAVA_HOME%/lib/ext文件夹下的jar包和class文件
+        sun.misc.Launcher$ExtClassLoader，继承 ClassLoader
+    AppClassLoader(应用程序类加载器)是自定义加载器的父类，负责加载classpath下的类文件
+        sun.misc.Launcher$AppClassLoader，继承 ClassLoader
+
+    如果想实现一个自定义加载器，则必须继承ClassLoader，其父加载器一定是AppClassLoader。
+16.双亲委派模型
+    双亲委派模型是java类加载器的一种工作模式，通过委托机制，确保类加载的唯一性、安全性和一致性。
+    双亲委派的实现原理可以简述为 向上委派，向下查找。即当要加载一个类时，当前类加载器会先查找缓存，检查类是否已加载，
+    如果已加载，则直接返回，如果未加载，则委托给父类加载器，如果父类加载器也找不到，则继续往上查找，直到启动类加载器BootStrapClassLoader.
+    如果在启动类加载器BootStrapClassLoader缓存中还是找不到，则向下查找，即从加载路径中加载，有则加载，没有则继续往下查找。
+
+    好处：
+        1.主要为了安全性。避免用户自己编写的类动态替换java的一些核心类，如String
+        2.避免类的重复加载
+
+    如何打破双亲委派？
+        通过继承 ClassLoader 并重写 loadClass 方法，自定义类加载逻辑，绕过默认的双亲委派机制。
+        public class CustomClassLoader extends ClassLoader {
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                // 直接加载类，跳过双亲委派
+                return findClass(name);
+            }
+        }
+
+17.java中的异常体系
+    java中的所有异常都来自顶级父类Throwable。
+    Throwable有两个子类，Exception和Error。
+    Error是程序无法处理的错误，一旦出现这个错误，则程序被迫中止，如 OutOfMemoryError。
+    Exception分为RunTimeException和CheckedException，即运行时异常和检查时异常。
+    运行时异常通常发生在程序运行过程中，会导致当前线程执行失败，一般要进行异常捕获处理， 如 NullPointerException。
+    检查时异常通常发生在程序编译过程中，会导致程序编译不通过 如 IOException。
+19.Java对象创建的过程是什么
+    是否已加载类----否---->加载类---->
+              ----是-------------->分配内存---->初始化---->设置对象头---->执行init方法---->栈上分配对象
+
+    类加载检查：检查这个引用代表的类是否已被加载，如果没有，则需要相应的类加载过程
+    分配内存
+    初始化
+    设置对象头
+    执行init方法
+    栈上分配对象
+
+
+
+

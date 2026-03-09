@@ -1,0 +1,29 @@
+
+1.#{}和${}的区别
+    #{}：预编译处理，是占位符，Mybatis将其替换为占位符?，通过PreparedStatement安全传递参数
+    ${}：是字符串替换，是拼接符，Mybatis直接将参数值拼接到sql中，不进行预编译，有sql注入风险
+2.Mapper如何传递多个参数
+    顺序传参法
+        public User getUser(Long id, String userName);
+        <select id="getUser" resultMap="UserResultMap">
+            select * from t_user where id = #{0} and user_name = #{1}
+        </select>
+        不建议使用：sql层表达不直观，且一旦顺序调整，容易出错
+    @Param注解传参法
+        public User getUser(@Param("id") Long id,@Param("userName") String userName);
+        <select id="getUser" resultMap="UserResultMap">
+            select * from t_user where id = #{id} and user_name = #{userName}
+        </select>
+        适用于参数不多的场景，参数如果很多的话，编写麻烦
+    Map传参法
+        public User getUser(Map<String,Object> map);
+        <select id="getUser" parameterType = "java.util.Map" resultMap="UserResultMap">
+            select * from t_user where id = #{id} and user_name = #{userName}
+        </select>
+        参数多的情况下，比较灵活
+    Java Bean传参法
+        public User getUser(User user);
+        <select id="getUser" parameterType = "com.test.pojo.User" resultMap="UserResultMap">
+            select * from t_user where id = #{id} and user_name = #{userName}
+        </select>
+        最常用的传参法

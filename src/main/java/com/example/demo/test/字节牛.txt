@@ -1,0 +1,481 @@
+我来针对文中的面试题提供正确答案。由于题目较多，我会逐部分详细回答：
+
+## 一、Java基础核心考点
+
+### 1. String 相关
+
+**(1) String、StringBuilder、StringBuffer 的区别及选择依据：**
+
+- **String**：不可变字符序列，每次修改都会创建新对象，适合少量字符串操作
+- **StringBuilder**：可变字符序列，线程不安全，性能最高，适合单线程大量字符串操作
+- **StringBuffer**：可变字符序列，线程安全（方法有 synchronized），性能较低，适合多线程环境
+
+**选择依据**：
+- 操作少或常量 → String
+- 多线程环境 → StringBuffer
+- 单线程大量操作 → StringBuilder
+
+**(2) equals 与 == 的差异，hashCode 与 equals 的关系：**
+
+- **==**：比较基本类型时比较值，比较引用类型时比较内存地址
+- **equals**：默认比较地址（Object类），可重写用于比较内容
+
+**hashCode 与 equals 关系**：
+- equals 相等的对象，hashCode 必须相等
+- hashCode 相等的对象，equals 不一定相等
+- **HashMap 中不重写 hashCode 的问题**：导致无法正确定位 bucket，即使 equals 相同也无法获取到对象，造成内存泄漏
+
+### 2. 面向对象特性
+
+**(1) 三大特性：**
+
+- **封装**：隐藏内部实现细节，通过 public 方法访问私有成员
+- **继承**：子类继承父类属性和方法，实现代码复用
+- **多态**：同一操作作用于不同对象产生不同行为
+
+**多态业务场景举例**：
+```java
+// 支付场景
+interface Payment {
+    void pay(double amount);
+}
+
+class Alipay implements Payment {
+    public void pay(double amount) {
+        // 支付宝支付逻辑
+    }
+}
+
+class WechatPay implements Payment {
+    public void pay(double amount) {
+        // 微信支付逻辑
+    }
+}
+
+// 使用时
+Payment payment = new Alipay(); // 多态
+payment.pay(100);
+```
+
+
+**(2) 抽象类和接口（Java 8+）的区别：**
+
+| 特性 | 抽象类 | 接口 |
+|------|--------|------|
+| 设计目的 | 代码复用 | 行为规范 |
+| 继承方式 | 单继承 | 多实现 |
+| 成员变量 | 任意类型 | public static final |
+| 构造方法 | 有 | 无 |
+| 普通方法 | 可以有 | Java 8+ 可有 default/static |
+
+**default 方法作用**：允许在接口中添加非抽象方法，便于接口扩展而不破坏已有实现类
+
+### 3. JVM 相关
+
+**(1) JVM 内存模型：**
+
+- **堆（Heap）**：存储对象实例，分新生代（Eden、Survivor）和老年代
+- **栈（Stack）**：线程私有，存储局部变量表、操作数栈、方法出口
+- **方法区**：存储类信息、常量、静态变量（JDK8 后为元空间）
+- **程序计数器**：记录当前线程执行的字节码行号
+
+**对象分配流程**：
+1. 优先在 Eden 区分配
+2. Eden 满时触发 Minor GC，存活对象移到 Survivor
+3. 大对象直接进入老年代
+4. 长期存活对象（年龄阈值）进入老年代
+5. 老年代满时触发 Full GC
+
+**(2) Minor GC 和 Full GC：**
+
+- **Minor GC**：新生代空间不足时触发，频率高，速度快
+- **Full GC**：老年代/方法区满时触发，伴随 Minor GC，速度慢
+
+**CMS vs G1**：
+- **CMS**：标记 - 清除算法，低停顿，但会产生碎片
+- **G1**：分区管理，可预测停顿时间，无碎片，适合大堆
+
+**(3) 双亲委派模型：**
+
+**机制**：类加载请求先委托给父加载器，只有父加载器无法加载时才自己加载
+
+**打破方式**：自定义 ClassLoader，重写 loadClass 方法
+
+**应用场景**：
+- JDBC SPI 机制（ThreadContextClassLoader）
+- Tomcat 隔离不同 Web 应用的类
+- HotSwap 热部署
+
+## 二、多线程与并发编程
+
+### 1. 锁机制
+
+**(1) synchronized vs ReentrantLock：**
+
+| 特性 | synchronized | ReentrantLock |
+|------|--------------|---------------|
+| 实现层面 | JVM 关键字 | API 类 |
+| 可中断 | 否 | 是（lockInterruptibly） |
+| 公平锁 | 只能非公平 | 可选择 |
+| 条件变量 | 单一（wait/notify） | 多个（Condition） |
+| 释放锁 | 自动 | 手动（finally 中 unlock） |
+
+**高并发租客管理场景选择**：
+- 读多写少 → 读写锁（ReentrantReadWriteLock）
+- 简单同步 → synchronized（JDK6+ 优化后性能好）
+- 复杂场景（超时、中断、多条件）→ ReentrantLock
+
+**(2) volatile 的作用：**
+
+- 保证可见性（一个线程修改立即可见）
+- 禁止指令重排序
+- **不能保证原子性**
+
+**应用举例**：
+```java
+// 单例模式双重检查锁
+volatile static Singleton instance;
+if (instance == null) {
+    synchronized (Singleton.class) {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+    }
+}
+```
+
+
+### 2. 线程池
+
+**(1) 不建议使用 Executors 的原因：**
+
+- `newFixedThreadPool` / `newSingleThreadExecutor`：队列长度 Integer.MAX_VALUE，可能 OOM
+- `newCachedThreadPool`：最大线程数 Integer.MAX_VALUE，可能 OOM
+- `newScheduledThreadPool`：延迟任务队列无限制
+
+**ThreadPoolExecutor 核心参数**：
+1. corePoolSize：核心线程数
+2. maximumPoolSize：最大线程数
+3. keepAliveTime：非核心线程空闲存活时间
+4. unit：时间单位
+5. workQueue：任务队列
+6. threadFactory：线程工厂
+7. handler：拒绝策略
+
+**拒绝策略**：
+- AbortPolicy（默认）：抛异常
+- CallerRuns：调用者线程执行
+- Discard：丢弃任务
+- DiscardOldest：丢弃最老任务
+
+**(2) CountDownLatch/CyclicBarrier/Semaphore：**
+
+- **CountDownLatch**：一个线程等待其他线程完成（倒计时门闩）
+  - 场景：智慧公寓平台启动时等待各服务初始化完成
+  
+- **CyclicBarrier**：多个线程互相等待到达屏障（可重用）
+  - 场景：财务结算时等待所有楼栋数据汇总
+  
+- **Semaphore**：控制同时访问的线程数（信号量）
+  - 场景：限制同时访问智能门锁服务的线程数
+
+## 三、Spring 框架与微服务
+
+### 1. Spring 核心
+
+**(1) IOC 和 AOP 原理：**
+
+**IOC（控制反转）**：
+- 原理：依赖注入，将对象创建交给 Spring 容器
+- Bean 生命周期：实例化 → 属性赋值 → 初始化前 → 初始化 → 初始化后 → 使用 → 销毁
+
+**AOP（面向切面）**：
+- 原理：动态代理（JDK 动态代理/CGLIB）
+- 实现：@Aspect 定义切面，@Before/@After/@Around 定义通知
+
+**循环依赖解决**：
+- 三级缓存解决 setter 注入循环依赖
+- 构造器注入无法解决，需用@Lazy
+
+**(2) Spring Boot 自动配置原理：**
+
+**关键注解**：
+- @EnableAutoConfiguration
+- @Configuration
+- @ConditionalOnClass
+- @Bean
+
+**关键文件**：
+- META-INF/spring.factories（2.x）
+- META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports（3.x）
+
+**机制**：启动时扫描 classpath 下的 jar 包，根据条件注解自动装配 Bean
+
+### 2. 微服务架构
+
+**(1) Nacos 和 Sentinel：**
+
+**Nacos**：
+- 注册中心：服务注册与发现
+- 配置中心：动态配置管理
+- 场景：智慧公寓各微服务注册、动态调整租金策略配置
+
+**Sentinel**：
+- 流量控制：QPS 限流
+- 熔断降级：故障服务快速失败
+- 场景：租房高峰期限制查询接口 QPS，保护数据库
+
+**(2) Ribbon vs OpenFeign：**
+
+**Ribbon**：
+- 客户端负载均衡工具
+- 底层组件，需配合 RestTemplate 使用
+
+**OpenFeign**：
+- 声明式 HTTP 客户端
+- 集成 Ribbon 实现负载均衡
+- 使用接口 + 注解方式，更简洁
+
+## 四、数据库与 SQL 优化
+
+### 1. MySQL 基础
+
+**(1) B+树索引：**
+
+**B+树结构**：
+- 非叶子节点只存索引，叶子节点存数据
+- 叶子节点形成有序链表
+- 层级一般 3-4 层
+
+**最左前缀原则**：联合索引 (a,b,c)，查询必须从最左列开始匹配
+
+**覆盖索引**：查询的列都在索引中，无需回表
+
+**自增主键优势**：
+- 顺序插入，减少页分裂
+- 提高插入性能
+- 减少碎片
+
+**(2) 事务 ACID 特性：**
+
+- **原子性（Atomicity）**：事务要么全部成功，要么全部失败（undo log 保证）
+- **一致性（Consistency）**：事务前后数据一致
+- **隔离性（Isolation）**：事务之间互不干扰
+- **持久性（Durability）**：事务提交后永久保存（redo log 保证）
+
+**隔离级别问题**：
+- 读未提交：脏读、不可重复读、幻读
+- 读已提交（Oracle 默认）：不可重复读、幻读
+- 可重复读（MySQL 默认）：幻读（MVCC+ 间隙锁解决）
+- 串行化：无问题，性能差
+
+### 2. SQL 优化
+
+**(1) 慢查询分析：**
+
+**步骤**：
+1. 开启慢查询日志（slow_query_log）
+2. 使用 EXPLAIN 分析执行计划
+3. 查看 type、key、rows 等字段
+
+**EXPLAIN 字段含义**：
+- id：查询序号
+- select_type：查询类型（SIMPLE/PRIMARY/SUBQUERY 等）
+- type：连接类型（system>const>eq_ref>ref>range>index>ALL）
+- key：实际使用的索引
+- rows：扫描行数
+- Extra：额外信息（Using index/Using where/Using temporary 等）
+
+**(2) 分库分表策略：**
+
+**分片策略**：
+- 水平分表：按城市/时间分表（tenant_city_01, tenant_city_02）
+- 垂直分表：大字段拆分到扩展表
+
+**注意事项**：
+- 分片键选择（城市 ID、租户 ID）
+- 跨分片查询问题（ES 搜索引擎）
+- 分布式 ID（雪花算法）
+- 事务一致性（Seata）
+
+## 五、算法与编程题
+
+### 1. 基础算法
+
+**(1) 组成最大数：**
+```java
+public String largestNumber(int[] nums) {
+    String[] arr = new String[nums.length];
+    for (int i = 0; i < nums.length; i++) {
+        arr[i] = String.valueOf(nums[i]);
+    }
+    
+    Arrays.sort(arr, (a, b) -> (b + a).compareTo(a + b));
+    
+    if (arr[0].equals("0")) return "0";
+    
+    StringBuilder sb = new StringBuilder();
+    for (String s : arr) {
+        sb.append(s);
+    }
+    return sb.toString();
+}
+```
+
+
+**(2) 课程学习轮数（拓扑排序）：**
+```java
+public int minSemesters(int[][] relations) {
+    Map<Integer, List<Integer>> graph = new HashMap<>();
+    int[] indegree = new int[n + 1];
+    
+    for (int[] relation : relations) {
+        graph.computeIfAbsent(relation[0], k -> new ArrayList<>()).add(relation[1]);
+        indegree[relation[1]]++;
+    }
+    
+    Queue<Integer> queue = new LinkedList<>();
+    for (int i = 1; i <= n; i++) {
+        if (indegree[i] == 0) queue.offer(i);
+    }
+    
+    int rounds = 0;
+    while (!queue.isEmpty()) {
+        int size = queue.size();
+        for (int i = 0; i < size; i++) {
+            int course = queue.poll();
+            for (int next : graph.getOrDefault(course, new ArrayList<>())) {
+                if (--indegree[next] == 0) {
+                    queue.offer(next);
+                }
+            }
+        }
+        rounds++;
+    }
+    
+    return rounds;
+}
+```
+
+
+**(3) 蛇形遍历二叉树：**
+```java
+public List<List<Integer>> zigzagLevelOrder(TreeNode root) {
+    List<List<Integer>> result = new ArrayList<>();
+    if (root == null) return result;
+    
+    Queue<TreeNode> queue = new LinkedList<>();
+    queue.offer(root);
+    boolean leftToRight = true;
+    
+    while (!queue.isEmpty()) {
+        int size = queue.size();
+        Deque<Integer> level = new LinkedList<>();
+        
+        for (int i = 0; i < size; i++) {
+            TreeNode node = queue.poll();
+            if (leftToRight) {
+                level.offerLast(node.val);
+            } else {
+                level.offerFirst(node.val);
+            }
+            
+            if (node.left != null) queue.offer(node.left);
+            if (node.right != null) queue.offer(node.right);
+        }
+        
+        result.add(new ArrayList<>(level));
+        leftToRight = !leftToRight;
+    }
+    
+    return result;
+}
+```
+
+
+### 2. 业务场景算法
+
+**(1) 统计城市租客数量：**
+```java
+// 方案 1：使用 Stream API
+Map<String, Long> countByCity(List<Tenant> tenants) {
+    return tenants.stream()
+        .collect(Collectors.groupingBy(Tenant::getCity, Collectors.counting()));
+}
+
+// 方案 2：使用 ConcurrentHashMap（并发场景）
+Map<String, LongAdder> countConcurrently(List<Tenant> tenants) {
+    Map<String, LongAdder> counter = new ConcurrentHashMap<>();
+    tenants.parallelStream().forEach(tenant -> {
+        counter.computeIfAbsent(tenant.getCity(), k -> new LongAdder()).increment();
+    });
+    return counter.entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().sum()));
+}
+```
+
+
+**(2) 智能门锁权限管理：**
+```java
+class LockPermission {
+    private Map<Long, List<AccessRule>> tenantRules = new ConcurrentHashMap<>();
+    
+    class AccessRule {
+        long tenantId;
+        LocalDateTime startTime;
+        LocalDateTime endTime;
+        Set<Integer> allowedDays; // 周几允许访问
+        
+        boolean canAccess(LocalDateTime time) {
+            if (time.isBefore(startTime) || time.isAfter(endTime)) {
+                return false;
+            }
+            int dayOfWeek = time.getDayOfWeek().getValue();
+            return allowedDays.contains(dayOfWeek);
+        }
+    }
+    
+    boolean checkPermission(long tenantId, LocalDateTime accessTime) {
+        List<AccessRule> rules = tenantRules.get(tenantId);
+        if (rules == null) return false;
+        
+        return rules.stream().anyMatch(rule -> rule.canAccess(accessTime));
+    }
+}
+```
+
+
+## 六、系统设计
+
+### 1. 合同自动化管理系统
+
+**架构设计**：
+```
+前端层：Vue/React
+网关层：Spring Cloud Gateway
+服务层：
+  - 合同服务（Spring Boot）
+  - 审批工作流（Activiti/Flowable）
+  - 消息服务（RocketMQ）
+数据层：MySQL + Redis + MongoDB
+```
+
+
+**关键模块**：
+1. **合同创建**：模板引擎（Freemarker）+ PDF 生成（iText）
+2. **审批流程**：工作流引擎，支持多级审批
+3. **电子签名**：对接第三方（e 签宝）
+4. **状态流转**：状态机模式
+
+### 2. 高并发文档预览
+
+**架构优化**：
+1. **CDN 加速**：静态资源 CDN 分发
+2. **缓存策略**：Redis 缓存转换后的文档
+3. **异步处理**：文档上传后 MQ 异步转换为 HTML/PDF
+4. **分片加载**：大文档分页加载
+5. **限流降级**：Sentinel 保护转换服务
+
+---
+
+以上是所有面试题的详细解答，涵盖了 Java基础、并发编程、Spring 框架、数据库、算法和系统设计等各个方面。
